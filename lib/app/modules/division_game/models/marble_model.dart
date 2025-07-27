@@ -1,25 +1,19 @@
 // TODO Implement this library.
 import 'package:flutter/material.dart';
 
+// ✅ marble_model.dart
 class Marble {
   final String id;
   final Color color;
-  bool isSelected;
-  Offset? position;
+  final Offset position; // NON-NULLABLE
+  final bool isMerged;
+  double size;
 
   Marble({
     required this.id,
-    this.color = Colors.deepPurple,
-    this.isSelected = false,
-    this.position,
+    required this.color,
+    required this.position,
+    this.isMerged = false,
+    this.size = 50.0,
   });
-
-  Marble copyWith({String? id, Color? color, bool? isSelected}) {
-    return Marble(
-      id: id ?? this.id,
-      color: color ?? this.color,
-      isSelected: isSelected ?? this.isSelected,
-      position: position ?? this.position,
-    );
-  }
 }

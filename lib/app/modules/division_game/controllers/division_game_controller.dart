@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -7,7 +8,6 @@ import '../models/card_model.dart';
 import '../models/math_question.dart';
 
 class DivisionGameController extends GetxController {
-  // Observable variables
   final RxList<Marble> availableMarbles = <Marble>[].obs;
   final RxList<GameCard> gameCards = <GameCard>[].obs;
   final Rx<MathQuestion> currentQuestion = MathQuestion(
@@ -17,10 +17,23 @@ class DivisionGameController extends GetxController {
   final RxBool isGameComplete = false.obs;
   final RxString gameStatus = ''.obs;
 
+  Timer? collisionTimer;
+
   @override
   void onInit() {
     super.onInit();
     initializeGame();
+
+    // Jalankan timer setiap 500ms untuk cek tabrakan
+    collisionTimer = Timer.periodic(Duration(milliseconds: 500), (_) {
+      checkMarbleCollisionAndMerge();
+    });
+  }
+
+  @override
+  void onClose() {
+    collisionTimer?.cancel();
+    super.onClose();
   }
 
   void initializeGame() {
@@ -28,9 +41,9 @@ class DivisionGameController extends GetxController {
     availableMarbles.clear();
 
     const double marbleSize = 30.0;
-    const double maxWidth = 300.0; // Lebar maksimal area marble
-    const double maxHeight = 400.0; // Tinggi maksimal area marble
-    const double padding = 8.0; // Jarak antar marble
+    const double maxWidth = 300.0;
+    const double maxHeight = 400.0;
+    const double padding = 8.0;
 
     final random = Random();
     final List<Offset> positions = [];
@@ -54,19 +67,19 @@ class DivisionGameController extends GetxController {
 
         attempts++;
       }
-      // Jika terlalu banyak marble dan tidak menemukan posisi bebas, tetap return
       return Offset(
         random.nextDouble() * (maxWidth - marbleSize),
         random.nextDouble() * (maxHeight - marbleSize),
       );
     }
 
-    final List<Marble> marbles = List.generate(
+    final marbles = List.generate(
       question.dividend,
       (i) => Marble(
         id: 'marble_$i',
         color: Colors.deepPurple,
         position: generateNonOverlappingPosition(),
+        isMerged: false,
       ),
     );
 
@@ -83,19 +96,15 @@ class DivisionGameController extends GetxController {
   }
 
   void onMarbleDraggedToCard(Marble marble, CardType cardType) {
-    // Remove marble from available marbles
     availableMarbles.removeWhere((m) => m.id == marble.id);
-
-    // Add marble to the target card
-    final cardIndex = gameCards.indexWhere((card) => card.type == cardType);
-    if (cardIndex != -1) {
-      gameCards[cardIndex].marbles.add(marble);
+    final index = gameCards.indexWhere((card) => card.type == cardType);
+    if (index != -1) {
+      gameCards[index].marbles.add(marble);
       gameCards.refresh();
     }
   }
 
   void onMarbleRemovedFromCard(Marble marble) {
-    // Remove marble from all cards and add back to available marbles
     for (var card in gameCards) {
       card.marbles.removeWhere((m) => m.id == marble.id);
     }
@@ -105,9 +114,8 @@ class DivisionGameController extends GetxController {
 
   void checkAnswer() {
     final expectedCount = currentQuestion.value.quotient;
-    final List<String> incorrectCards = [];
+    final incorrectCards = <String>[];
 
-    // Check each card
     for (var card in gameCards) {
       if (card.marbles.length != expectedCount) {
         incorrectCards.add(_getCardName(card.type));
@@ -116,7 +124,6 @@ class DivisionGameController extends GetxController {
 
     if (incorrectCards.isEmpty &&
         _getTotalMarblesInCards() == currentQuestion.value.dividend) {
-      // Correct answer
       isGameComplete.value = true;
       gameStatus.value = 'Correct!';
       _showResultDialog(
@@ -125,7 +132,6 @@ class DivisionGameController extends GetxController {
         isCorrect: true,
       );
     } else {
-      // Incorrect answer
       String message = 'Incorrect answer.\n';
       if (incorrectCards.isNotEmpty) {
         message +=
@@ -148,7 +154,6 @@ class DivisionGameController extends GetxController {
   }
 
   void newQuestion() {
-    // Generate a new question (you can expand this logic)
     final questions = [
       MathQuestion(dividend: 24, divisor: 3),
       MathQuestion(dividend: 20, divisor: 4),
@@ -156,10 +161,50 @@ class DivisionGameController extends GetxController {
       MathQuestion(dividend: 15, divisor: 5),
       MathQuestion(dividend: 12, divisor: 4),
     ];
-
     currentQuestion.value =
         questions[DateTime.now().millisecond % questions.length];
     initializeGame();
+  }
+
+  void checkMarbleCollisionAndMerge() {
+    const double marbleSize = 30.0;
+    const double mergeDistance = marbleSize;
+
+    for (int i = 0; i < availableMarbles.length; i++) {
+      for (int j = i + 1; j < availableMarbles.length; j++) {
+        final m1 = availableMarbles[i];
+        final m2 = availableMarbles[j];
+
+        if ((m1.position - m2.position).distance < mergeDistance &&
+            !m1.isMerged &&
+            !m2.isMerged) {
+          _mergeMarbles(m1, m2);
+          update(); // agar UI ter-refresh
+          return;
+        }
+      }
+    }
+  }
+
+  void _mergeMarbles(Marble m1, Marble m2) {
+    final newMarble = Marble(
+      id: '${m1.id}_${m2.id}',
+      color: Colors.purple,
+      position: Offset(
+        ((m1.position.dx + m2.position.dx) / 2),
+        ((m1.position.dy + m2.position.dy) / 2),
+      ),
+
+      isMerged: true,
+    );
+
+    availableMarbles.remove(m1);
+    availableMarbles.remove(m2);
+    availableMarbles.add(newMarble);
+  }
+
+  int _getTotalMarblesInCards() {
+    return gameCards.fold(0, (total, card) => total + card.marbles.length);
   }
 
   String _getCardName(CardType type) {
@@ -171,10 +216,6 @@ class DivisionGameController extends GetxController {
       case CardType.green:
         return 'Green';
     }
-  }
-
-  int _getTotalMarblesInCards() {
-    return gameCards.fold(0, (total, card) => total + card.marbles.length);
   }
 
   void _showResultDialog({

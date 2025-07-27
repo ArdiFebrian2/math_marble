@@ -15,25 +15,23 @@ class DivisionGameView extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // Question Display di atas
+            // Question Display
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: QuestionDisplay(),
             ),
-
             const SizedBox(height: 10),
 
-            // Expanded scrollable game area + tombol
+            // Game Area
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Column(
                   children: [
-                    // Game Area
                     Expanded(
                       child: Row(
                         children: [
-                          // Kartu Game
+                          // Game Cards
                           SizedBox(
                             width: 120,
                             child: Obx(
@@ -54,7 +52,7 @@ class DivisionGameView extends StatelessWidget {
                           ),
                           const SizedBox(width: 20),
 
-                          // Marble Area dengan posisi acak (menggunakan Stack)
+                          // Marble Area
                           Expanded(
                             child: LayoutBuilder(
                               builder: (context, constraints) {
@@ -67,20 +65,20 @@ class DivisionGameView extends StatelessWidget {
                                       marble,
                                     ) {
                                       final position =
-                                          marble.position ?? Offset(0, 0);
-                                      // Clamp posisi agar tetap dalam batas
-                                      final dx = position.dx.clamp(
+                                          marble.position ?? Offset.zero;
+
+                                      final clampedX = position.dx.clamp(
                                         0.0,
-                                        maxWidth - 30,
-                                      );
-                                      final dy = position.dy.clamp(
+                                        maxWidth - 35,
+                                      ); // 35 = marble size
+                                      final clampedY = position.dy.clamp(
                                         0.0,
-                                        maxHeight - 30,
+                                        maxHeight - 35,
                                       );
 
                                       return Positioned(
-                                        left: dx,
-                                        top: dy,
+                                        left: clampedX,
+                                        top: clampedY,
                                         child: MarbleWidget(marble: marble),
                                       );
                                     }).toList(),
@@ -92,10 +90,9 @@ class DivisionGameView extends StatelessWidget {
                         ],
                       ),
                     ),
-
                     const SizedBox(height: 20),
 
-                    // Tombol Check Answer
+                    // Check Answer Button
                     SizedBox(
                       width: double.infinity,
                       height: 50,

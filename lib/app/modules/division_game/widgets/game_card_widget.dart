@@ -12,12 +12,13 @@ class GameCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        // Half visible card
-        Align(
-          alignment: Alignment.centerLeft,
-          child: DragTarget<Marble>(
+    return Padding(
+      padding: const EdgeInsets.only(left: 0), // Mepet ke kiri
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Half visible card
+          DragTarget<Marble>(
             onAccept: (marble) {
               controller.onMarbleDraggedToCard(marble, card.type);
             },
@@ -63,31 +64,31 @@ class GameCardWidget extends StatelessWidget {
               );
             },
           ),
-        ),
 
-        // Marbles outside the card (on the right side)
-        Expanded(
-          child: Obx(
-            () => Wrap(
-              spacing: 4,
-              runSpacing: 4,
-              children: card.marbles.map((marble) {
-                return GestureDetector(
-                  onTap: () => controller.onMarbleRemovedFromCard(marble),
-                  child: Container(
-                    width: 20,
-                    height: 20,
-                    decoration: BoxDecoration(
-                      color: marble.color,
-                      shape: BoxShape.circle,
+          // Marbles outside the card (on the right side)
+          Expanded(
+            child: Obx(
+              () => Wrap(
+                spacing: 4,
+                runSpacing: 4,
+                children: card.marbles.map((marble) {
+                  return GestureDetector(
+                    onTap: () => controller.onMarbleRemovedFromCard(marble),
+                    child: Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        color: marble.color,
+                        shape: BoxShape.circle,
+                      ),
                     ),
-                  ),
-                );
-              }).toList(),
+                  );
+                }).toList(),
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
