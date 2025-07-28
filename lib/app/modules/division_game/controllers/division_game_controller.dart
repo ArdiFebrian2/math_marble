@@ -99,7 +99,17 @@ class DivisionGameController extends GetxController {
     availableMarbles.removeWhere((m) => m.id == marble.id);
     final index = gameCards.indexWhere((card) => card.type == cardType);
     if (index != -1) {
-      gameCards[index].marbles.add(marble);
+      final card = gameCards[index];
+
+      // Buat marble baru dengan warna card
+      final coloredMarble = Marble(
+        id: marble.id,
+        color: card.color, // Ubah warna marble ke warna card
+        position: marble.position,
+        isMerged: marble.isMerged,
+      );
+
+      card.marbles.add(coloredMarble);
       gameCards.refresh();
     }
   }
